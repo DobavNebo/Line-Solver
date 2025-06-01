@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"bufio"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -11,23 +11,23 @@ import (
 type Piece struct {
 	Value string
 	Class int
-    Prior int
+	Prior int
 }
 
-func Linesolver(x string) float64{
+func Linesolver(x string) float64 {
 	ans := Tear(x)
 	ans = Zandatsu(ans)
 	return Calculate(ans)
 }
 
 func main() {
-    fmt.Println("LineSolver is loaded")
+	fmt.Println("LineSolver is loaded")
 	fmt.Println("Tests are getting started...")
 	Boottest()
 
 	menuItems := []string{"Help. How to use programm properly",
-	 "Insert math line",
-	 "Exit"}
+		"Insert math line",
+		"Exit"}
 
 	for {
 		printMenu(menuItems)
