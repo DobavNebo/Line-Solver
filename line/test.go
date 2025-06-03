@@ -68,6 +68,11 @@ func Boottest() {
 	all = append(all, testCase{-1.0, "-(+(-3 + +(+4)))"})
 	all = append(all, testCase{3.0, "++3"})
 
+	all = append(all, testCase{10.0, "(10"})
+	all = append(all, testCase{10.0, "10))"})
+	all = append(all, testCase{10.0, "(x | 10"})
+	all = append(all, testCase{10.0, "x)) | 10"})
+
 	for i := 0; i < len(all); i++ {
 		cur := &all[i]
 		result := Linesolver(cur.Problem)

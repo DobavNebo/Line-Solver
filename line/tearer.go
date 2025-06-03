@@ -16,6 +16,9 @@ func Tear(xas string) []Piece {
 	x := strings.Split(xas, "")
 	phase := true
 
+	openers := 0
+	closers := 0
+
 	for i, t := 0, len(x); i < t; {
 		c := x[i]
 		var pr *Piece
@@ -31,6 +34,7 @@ func Tear(xas string) []Piece {
 
 		// finding these pals ( )
 		if c == "(" && phase {
+			openers++
 			//added multiply there so 1(2+3) is valid
 			if !(pr == nil) && (pr.Class == 0 || pr.Class == -2) {
 				result = append(result, Piece{"*", 3, 0})
@@ -40,6 +44,7 @@ func Tear(xas string) []Piece {
 			continue
 		}
 		if c == ")" && phase {
+			closers++
 			result = append(result, Piece{")", -2, 0})
 			i++
 			continue
@@ -153,6 +158,22 @@ func Tear(xas string) []Piece {
 
 		// dark magic territory (messing with mathematical variables)
 		if c == "|" {
+
+			if openers != closers {
+				for openers > closers {
+					result = append(result, Piece{")", -2, 0})
+					closers++
+				}
+				var xleb []Piece
+				for openers < closers {
+					xleb = append(xleb, Piece{"(", -1, 0})
+					openers++
+				}
+				if len(xleb) > 0 {
+					result = append(xleb, result...)
+				}
+			}
+
 			result = append(result, Piece{"|", -10, 0})
 			phase = false
 			i++
@@ -166,6 +187,24 @@ func Tear(xas string) []Piece {
 
 		i += 1
 	}
+
+	// parenters check
+	if openers != closers {
+		for openers > closers {
+			result = append(result, Piece{")", -2, 0})
+			closers++
+		}
+		var xleb []Piece
+		for openers < closers {
+			xleb = append(xleb, Piece{"(", -1, 0})
+			openers++
+		}
+		if len(xleb) > 0 {
+			result = append(xleb, result...)
+		}
+	}
+	//
+
 	return result
 }
 
