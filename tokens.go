@@ -6,6 +6,14 @@ import (
 	"strings"
 )
 
+// Структура токена
+type Piece struct {
+	Value string
+	Class int
+	Prior int
+}
+
+// Первичное разбивание строки на токены типа Piece
 func Tear(xas string) []Piece {
 	var result []Piece
 	if len(xas) < 1 {
@@ -26,16 +34,16 @@ func Tear(xas string) []Piece {
 			pr = &result[(len(result))-1]
 		}
 
-		// space is not an element of equation
+		// Пробел не несёт математического значения
 		if c == " " {
 			i++
 			continue
 		}
 
-		// finding these pals ( )
+		// Поиск скобочек
 		if c == "(" && phase {
 			openers++
-			//added multiply there so 1(2+3) is valid
+			// Добавлено умножение, чтобы строки вроде 1(2+3) могли корретно работать
 			if !(pr == nil) && (pr.Class == 0 || pr.Class == -2) {
 				result = append(result, Piece{"*", 3, 0})
 			}
@@ -49,22 +57,22 @@ func Tear(xas string) []Piece {
 			i++
 			continue
 		}
-		// end of ( ) part
+		//
 
-		// is minus guy unar?
+		// Унарный минус
 		if c == "-" && (pr == nil || !automlp(pr.Class)) && phase {
 			result = append(result, Piece{"-", 10, 0})
 			i++
 			continue
 		}
-		// we surely need no unar plus
+		// Нет смысла создавать токен для унарного плюса т.к. это равносильно умножению на 1
 		if c == "+" && (pr == nil || !automlp(pr.Class)) && phase {
 			i++
 			continue
 		}
-		// end of unars minus
+		//
 
-		// basic arifmethics
+		// Базовая арифметика
 		if c == "+" && phase {
 			result = append(result, Piece{"+", 1, 0})
 			i++
@@ -95,11 +103,11 @@ func Tear(xas string) []Piece {
 			i++
 			continue
 		}
-		// end of basic arifmethics part
+		// Конец базовой арифметики
 
-		// is a number?
+		// Поиск числа
 		if ispon(c) || (c == "-" && !phase) {
-			// once again multiply
+			// проверка на необходимость добавления умножения
 			if !(pr == nil) && automlp(pr.Class) && phase {
 				result = append(result, Piece{"*", 3, 0})
 			}
@@ -112,7 +120,7 @@ func Tear(xas string) []Piece {
 			}
 			numStr += string(c)
 
-			// gather the rest of digits and periods
+			// собираем оставшиеся цифры и точки
 			g := 1
 			for i+g < t && ispon(x[i+g]) {
 				if x[i+g] == "." {
@@ -121,9 +129,14 @@ func Tear(xas string) []Piece {
 				numStr += string(x[i+g])
 				g++
 			}
-			result = append(result, Piece{numStr, 0, 0})
+
+			// Если было получено число с больше чем одной точкой, например, 100.01.02,
+			// его нельзя явно преобразовать во float
 			if warn > 1 {
-				fmt.Println("Warning! Incorrect number: " + numStr + "\n It will be perceived as 0 (zero)")
+				fmt.Println("Внимание! Некорректное число: " + numStr + "\n Оно будет трактоваться как 0 (ноль)")
+				result = append(result, Piece{"0", 0, 0})
+			} else {
+				result = append(result, Piece{numStr, 0, 0})
 			}
 
 			i += g
@@ -156,7 +169,7 @@ func Tear(xas string) []Piece {
 		}
 		// end of letters
 
-		// dark magic territory (messing with mathematical variables)
+		// Разделитель, после которого следуют значения переменных
 		if c == "|" {
 
 			if openers != closers {
@@ -179,16 +192,17 @@ func Tear(xas string) []Piece {
 			i++
 			continue
 		}
-		// end of dark magic
+		// конец блок с разделителем
 
-		fmt.Println("WARNING! Inapropriate element or its positioning:", c)
-		fmt.Println("Position: ", i)
-		fmt.Println("It will be ignored")
+		fmt.Println("Внимание! Неадекватный элемент или его положение:", c)
+		fmt.Println("Номер символа: ", i)
+		fmt.Println("Он будет проигнорирован")
 
 		i += 1
 	}
 
-	// parenters check
+	// Проверка соответствия скобок.
+	// Если открыто и закрыто неравное количество - происходит исправление
 	if openers != closers {
 		for openers > closers {
 			result = append(result, Piece{")", -2, 0})
@@ -208,33 +222,35 @@ func Tear(xas string) []Piece {
 	return result
 }
 
+// "Is Part Of Number" (часть числа)
+// Проверяет явялется ли входная строка точкой или цифрой
 func ispon(x string) bool {
-	// Is Part Of Number
-	// Checks if input byte-typed rune is either digit or period
 	return x == "." || (x >= "0" && x <= "9")
 }
 
+// "Is letter" (буква)
+// Проверяет является ли входная строка буквой
 func islett(x string) bool {
-	// Is letter
 	return (x >= "a" && x <= "z") || (x >= "A" && x <= "Z") || x == "π"
 }
 
+// Проверяет нужен ли автоматический знак умножения
 func automlp(x int) bool {
-	// Checks if additional multiplier needed
 	return x == 0 || x == -2 || x == -3
 }
 
+// Проверяет нужен ли автоматический знак умножения (для других случаев)
 func betamlp(x int) bool {
-	// Checks if additional multiplier needed
 	return x == 0 || x == -1 || x == -3
 }
 
+// Разбивает на соответствюущие токены строку из букв
 func words(x string) (wordslist []Piece) {
 	runes := []rune(x)
 	for len(runes) > 0 {
 		n := len(runes)
 
-		// trigonometry
+		// тригонометрия
 		if n >= 5 && string(runes[n-5:n]) == "acosh" {
 			wordslist = append(wordslist, Piece{"acosh", 11, 0})
 			runes = runes[:len(runes)-5]
@@ -282,7 +298,7 @@ func words(x string) (wordslist []Piece) {
 			runes = runes[:len(runes)-3]
 			continue
 		}
-		// end of trigonometry
+		// конец тригонометрии
 
 		if n >= 2 && string(runes[n-2:n]) == "ln" {
 			wordslist = append(wordslist, Piece{"ln", 20, 0})
@@ -290,7 +306,7 @@ func words(x string) (wordslist []Piece) {
 			continue
 		}
 
-		//constants
+		// константы
 		if n >= 2 && string(runes[n-2:n]) == "pi" {
 			wordslist = append(wordslist, Piece{"3.141593", 0, 0})
 			runes = runes[:len(runes)-2]
@@ -307,13 +323,14 @@ func words(x string) (wordslist []Piece) {
 			continue
 		}
 
-		//end of constants
+		// конец констант
 
 		wordslist = append(wordslist, Piece{string(runes[n-1]), -3, 0})
 		runes = runes[:len(runes)-1]
 	}
 	slices.Reverse(wordslist)
-	// safety net for messing with multiplying
+
+	// "safety net" на случай проблем с умножением
 	if len(wordslist) > 1 {
 		i := 0
 		for i+1 < len(wordslist) {
@@ -328,4 +345,42 @@ func words(x string) (wordslist []Piece) {
 		}
 	}
 	return wordslist
+}
+
+// Получает на вход массив токенов (структур типа Piece), предположительно содержащий разделитель  " | "
+// При необходимости обрабатывает массив, избавляясь от разделителя и заменяя
+// переменные на необходимые значения.
+// Если переменные не используются, то просто возвращает исходный массив
+func Zandatsu(x []Piece) []Piece {
+	var rights []Piece
+	var result []Piece
+	var lefts []string
+
+	for i := range x {
+		current := &x[i]
+		if current.Class == -3 {
+			if !slices.Contains(lefts, current.Value) {
+				lefts = append(lefts, current.Value)
+			}
+		}
+		if current.Class == -10 {
+			rights = append(rights, x[(i+1):]...)
+			result = append(result, x[:i]...)
+			break
+		}
+	}
+	if len(rights) == 0 {
+		return x
+	}
+
+	for i := range result {
+		current := &result[i]
+		if current.Class == -3 {
+			if g := slices.Index(lefts, current.Value); g != -1 {
+				current.Value = rights[g].Value
+				current.Class = 0
+			}
+		}
+	}
+	return result
 }
