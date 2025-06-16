@@ -4,10 +4,17 @@ import (
 	"fmt"
 )
 
-func Linesolver(x string) float64 {
-	ans := Tear(x)
-	ans = Zandatsu(ans)
-	return Calculate(ans)
+func Linesolver(x string) (answer float64, err error) {
+	buff, err := Tear(x)
+	if err != nil {
+		return 1, err
+	}
+	buff = Zandatsu(buff)
+	answer, err = Calculate(buff)
+	if err != nil {
+		return 1, err
+	}
+	return answer, err
 }
 
 func main() {

@@ -26,7 +26,15 @@ func MainMenu() {
 		switch index {
 		case 1:
 			question := getUserInput("Введите математическую строку: ")
-			fmt.Println("Ответ: ", Linesolver(question))
+			result, err := Linesolver(question)
+			if err == nil {
+				fmt.Println("Ответ: ", result)
+				fmt.Println("Возвращение в главное меню...")
+			} else {
+				fmt.Println("Встречена ошибка: ", err)
+				fmt.Println("Возвращение в главное меню...")
+			}
+
 		case 2:
 			fmt.Println("Завершение работы...")
 			return

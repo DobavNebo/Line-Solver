@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -13,12 +14,23 @@ type Piece struct {
 	Prior int
 }
 
+// Блок для error-handling
+type ErrInvalidElement struct {
+	Element string
+	Pos     int
+}
+
+func (x ErrInvalidElement) Error() string {
+	return fmt.Sprintf("неадекватный элемент или его положение: %s Позиция: %v", string(x.Element), x.Pos)
+}
+
+//
+
 // Первичное разбивание строки на токены типа Piece
-func Tear(xas string) []Piece {
-	var result []Piece
+func Tear(xas string) (result []Piece, err error) {
 	if len(xas) < 1 {
 		result = append(result, Piece{"0", 0, 0})
-		return result
+		return result, errors.New("пустая входная строка")
 	}
 
 	x := strings.Split(xas, "")
@@ -133,8 +145,7 @@ func Tear(xas string) []Piece {
 			// Если было получено число с больше чем одной точкой, например, 100.01.02,
 			// его нельзя явно преобразовать во float
 			if warn > 1 {
-				fmt.Println("Внимание! Некорректное число: " + numStr + "\n Оно будет трактоваться как 0 (ноль)")
-				result = append(result, Piece{"0", 0, 0})
+				return result, ErrInvalidElement(ErrInvalidElement{numStr, i + 1})
 			} else {
 				result = append(result, Piece{numStr, 0, 0})
 			}
@@ -142,9 +153,9 @@ func Tear(xas string) []Piece {
 			i += g
 			continue
 		}
-		// end of number part
+		// конец чисел
 
-		// consts, letters and other
+		// Слова и константы
 		if islett(c) && phase {
 			// once again multiply
 			if !(pr == nil) && automlp(pr.Class) {
@@ -155,7 +166,7 @@ func Tear(xas string) []Piece {
 
 			letStr += string(c)
 
-			// gather the rest of letters
+			// собираем оставшиеся буквы
 			g := 1
 			for i+g < t && islett(x[i+g]) {
 				letStr += string(x[i+g])
@@ -167,7 +178,7 @@ func Tear(xas string) []Piece {
 			i += g
 			continue
 		}
-		// end of letters
+		// конец букв
 
 		// Разделитель, после которого следуют значения переменных
 		if c == "|" {
@@ -194,32 +205,10 @@ func Tear(xas string) []Piece {
 		}
 		// конец блок с разделителем
 
-		fmt.Println("Внимание! Неадекватный элемент или его положение:", c)
-		fmt.Println("Номер символа: ", i)
-		fmt.Println("Он будет проигнорирован")
-
-		i += 1
+		return result, ErrInvalidElement(ErrInvalidElement{c, i + 1})
 	}
 
-	// Проверка соответствия скобок.
-	// Если открыто и закрыто неравное количество - происходит исправление
-	if openers != closers {
-		for openers > closers {
-			result = append(result, Piece{")", -2, 0})
-			closers++
-		}
-		var xleb []Piece
-		for openers < closers {
-			xleb = append(xleb, Piece{"(", -1, 0})
-			openers++
-		}
-		if len(xleb) > 0 {
-			result = append(xleb, result...)
-		}
-	}
-	//
-
-	return result
+	return result, nil
 }
 
 // "Is Part Of Number" (часть числа)
@@ -330,7 +319,7 @@ func words(x string) (wordslist []Piece) {
 	}
 	slices.Reverse(wordslist)
 
-	// "safety net" на случай проблем с умножением
+	// Добавляем умножения если обнаружили идущие подряд переменные
 	if len(wordslist) > 1 {
 		i := 0
 		for i+1 < len(wordslist) {
