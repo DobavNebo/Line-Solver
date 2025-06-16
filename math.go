@@ -75,6 +75,7 @@ func escapeParents(x []Piece) (res []Piece, err error) {
 	return x, nil
 }
 
+// Проставляет операторам приоритеты
 func priorities(x []Piece) ([]Piece, []int) {
 	leng := len(x)
 	var priors []int
@@ -120,22 +121,24 @@ func priorities(x []Piece) ([]Piece, []int) {
 	return x, priors
 }
 
+// Принадлежность к функциям 1-го (снизу) приоритета
 func isone(a int) bool {
 	return a == 1 || a == 2
 }
 
+// Принадлежность к функциям 2-го приоритета
 func istwo(a int) bool {
 	return a == 3 || a == 4 || a == 5
 }
 
+// Принадлежность к унарным функциям (они же функции 3-го и наибольшего приоритета)
 func isunar(a int) bool {
 	return a >= 10 && a <= 20
 }
 
+// Получение конечного ответа из массивая токенов и списка приоритетов операторов
 func solve(x []Piece, priors []int) (end float64, err error) {
 	for _, g := range priors {
-		//for debug purposes
-		//fmt.Println(x)
 		for i := 0; i < len(x); i++ {
 			c := &x[i]
 			if c.Prior == g {
@@ -373,7 +376,7 @@ func solve(x []Piece, priors []int) (end float64, err error) {
 					c.Class = 0
 					x = append(x[:i+1], x[(i+2):]...)
 				case 20:
-					// log on base e
+					// натуральный логарифм ln (он же log с базой e)
 					err = safecheck(i, x, "ln", 1)
 					if err != nil {
 						return 1, err
@@ -389,8 +392,7 @@ func solve(x []Piece, priors []int) (end float64, err error) {
 			}
 		}
 	}
-	sh := &x[0]
-	end, _ = strconv.ParseFloat(sh.Value, 64)
+	end, _ = strconv.ParseFloat(x[0].Value, 64)
 	return end, nil
 }
 
